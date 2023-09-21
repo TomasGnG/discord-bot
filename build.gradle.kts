@@ -15,13 +15,22 @@ repositories {
 }
 
 dependencies {
-    testImplementation(platform("org.junit:junit-bom:5.9.1"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
+    // Lombgok
+    compileOnly("org.projectlombok:lombok:1.18.30")
+    annotationProcessor("org.projectlombok:lombok:1.18.30")
 
+    // Spring
     implementation("org.springframework.boot:spring-boot-starter")
+
+    // JDA
     implementation("net.dv8tion:JDA:5.0.0-beta.13")
 
+    // Checkstyle
     checkstyle("com.puppycrawl.tools:checkstyle:10.12.3")
+
+    // JUnit 5
+    testImplementation(platform("org.junit:junit-bom:5.9.1"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
 }
 
 java {
