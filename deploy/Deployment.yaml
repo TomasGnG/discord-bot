@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: bot
+  name: bot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bot
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: bot
+    spec:
+      containers:
+        - image: 127.0.0.1/efi23a/discord-bot:latest
+          name: bot
+          imagePullPolicy: Never
+          env:
+            - name: BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: bot-creds
+                  key: botToken
