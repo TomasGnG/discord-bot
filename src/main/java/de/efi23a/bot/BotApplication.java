@@ -16,7 +16,7 @@ public class BotApplication {
    *
    * @param args Kommandozeilenargumente
    */
-  public static void main(String[] args) throws InterruptedException {
+  public static void main(String[] args) {
     SpringApplication.run(BotApplication.class, args);
   }
 
