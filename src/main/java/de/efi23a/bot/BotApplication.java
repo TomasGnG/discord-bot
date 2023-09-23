@@ -1,5 +1,6 @@
 package de.efi23a.bot;
 
+import de.efi23a.bot.features.AlertFeature;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -15,8 +16,10 @@ public class BotApplication {
    *
    * @param args Kommandozeilenargumente
    */
-  public static void main(String[] args) {
+  public static void main(String[] args) throws InterruptedException {
     SpringApplication.run(BotApplication.class, args);
+
+    new AlertFeature(new BotConfiguration().jda());
   }
 
 }
