@@ -41,7 +41,16 @@ springBoot {
     mainClass.set("de.efi23a.bot.BotApplication")
 }
 
+checkstyle {
+    isIgnoreFailures = false
+    maxWarnings = 0
+    maxErrors = 0
+}
+
 tasks {
+    build {
+        dependsOn("check")
+    }
     test {
         useJUnitPlatform()
     }
