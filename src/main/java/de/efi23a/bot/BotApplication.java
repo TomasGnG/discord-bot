@@ -18,8 +18,6 @@ public class BotApplication {
    */
   public static void main(String[] args) throws InterruptedException {
     SpringApplication.run(BotApplication.class, args);
-
-    new AlertFeature(new BotConfiguration().jda());
   }
 
 }
