@@ -1,5 +1,6 @@
 package de.efi23a.bot;
 
+import de.efi23a.bot.features.AlertFeature;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
