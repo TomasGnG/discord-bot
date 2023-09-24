@@ -31,6 +31,14 @@ dependencies {
     // JUnit 5
     testImplementation(platform("org.junit:junit-bom:5.9.1"))
     testImplementation("org.junit.jupiter:junit-jupiter")
+
+    // MongoDB
+    implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+
+    // RESTful, Web
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
 java {
@@ -41,7 +49,16 @@ springBoot {
     mainClass.set("de.efi23a.bot.BotApplication")
 }
 
+checkstyle {
+    isIgnoreFailures = false
+    maxWarnings = 0
+    maxErrors = 0
+}
+
 tasks {
+    build {
+        dependsOn("check")
+    }
     test {
         useJUnitPlatform()
     }
