@@ -1,13 +1,13 @@
 package de.efi23a.bot.features;
 
 import jakarta.annotation.PostConstruct;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import lombok.RequiredArgsConstructor;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.springframework.stereotype.Component;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 @Component
 @RequiredArgsConstructor
@@ -26,22 +26,24 @@ public class AlertFeatureListener extends ListenerAdapter {
     var command = event.getName();
     var subcommand = event.getSubcommandName();
 
-    if(!command.equalsIgnoreCase("alert"))
+    if (!command.equalsIgnoreCase("alert")) {
       return;
-    if(subcommand == null)
+    }
+    if (subcommand == null) {
       return;
+    }
 
-    if(subcommand.equalsIgnoreCase("info")) {
+    if (subcommand.equalsIgnoreCase("info")) {
       var name = event.getOption("name").getAsString();
 
-      if(!alertFeature.exists(name)) {
+      if (!alertFeature.exists(name)) {
         event.reply("Eine Erinnerung mit diesem Namen gibt es nicht.").setEphemeral(true).queue();
         return;
       }
 
       event.replyEmbeds(alertFeature.getAlertEmbedMessage(name)).setEphemeral(true).queue();
     }
-    if(subcommand.equalsIgnoreCase("list")) {
+    if (subcommand.equalsIgnoreCase("list")) {
       var alerts = alertFeature.getAlerts();
       var builder = new StringBuilder();
 
@@ -52,12 +54,12 @@ public class AlertFeatureListener extends ListenerAdapter {
       event.reply(builder.toString()).setEphemeral(true).queue();
       return;
     }
-    if(subcommand.equalsIgnoreCase("add")) {
+    if (subcommand.equalsIgnoreCase("add")) {
       var name = event.getOption("name").getAsString();
       var date = event.getOption("date").getAsString();
       var description = event.getOption("description").getAsString();
 
-      if(alertFeature.exists(name)) {
+      if (alertFeature.exists(name)) {
         event.reply("Eine Erinnerung mit diesem Namen wurde bereits hinzugefügt. "
             + "Benutze ``/alert edit " + name + "`` !").setEphemeral(true).queue();
         return;
@@ -68,10 +70,12 @@ public class AlertFeatureListener extends ListenerAdapter {
 
         var dateInstanz = sdf.parse(date);
 
-        if(sdf.parse(sdf.format(new Date(System.currentTimeMillis()))).after(dateInstanz))
+        if (sdf.parse(sdf.format(new Date(System.currentTimeMillis()))).after(dateInstanz)) {
           throw new Exception();
+        }
       } catch (Exception e) {
-        event.reply("Das eingetragene Datum(``" + date + "``) ist ungültig!").setEphemeral(true).queue();
+        event.reply("Das eingetragene Datum(``" + date + "``) ist ungültig!").setEphemeral(true)
+            .queue();
         return;
       }
 
@@ -79,26 +83,28 @@ public class AlertFeatureListener extends ListenerAdapter {
       alertFeature.addAlert(name, date, description, event.getMember().getEffectiveName());
       return;
     }
-    if(subcommand.equalsIgnoreCase("edit")) {
+    if (subcommand.equalsIgnoreCase("edit")) {
       var name = event.getOption("name").getAsString();
       var property = event.getOption("property").getAsString();
       var value = event.getOption("value").getAsString();
 
-      if(!alertFeature.exists(name)) {
+      if (!alertFeature.exists(name)) {
         event.reply("Eine Erinnerung mit diesem Namen gibt es nicht.").setEphemeral(true).queue();
         return;
       }
 
-      if(property.equalsIgnoreCase("date")) {
+      if (property.equalsIgnoreCase("date")) {
         try {
           var sdf = new SimpleDateFormat("dd.MM.yyyy");
 
           var dateInstanz = sdf.parse(value);
 
-          if(sdf.parse(sdf.format(new Date(System.currentTimeMillis()))).after(dateInstanz))
+          if (sdf.parse(sdf.format(new Date(System.currentTimeMillis()))).after(dateInstanz)) {
             throw new Exception();
+          }
         } catch (Exception e) {
-          event.reply("Das eingetragene Datum(``" + value + "``) ist ungültig!").setEphemeral(true).queue();
+          event.reply("Das eingetragene Datum(``" + value + "``) ist ungültig!").setEphemeral(true)
+              .queue();
           return;
         }
       }
@@ -106,10 +112,10 @@ public class AlertFeatureListener extends ListenerAdapter {
       alertFeature.editAlert(name, property, value);
       event.reply("Die Erinnerung '" + name + "' wurde geändert.").setEphemeral(true).queue();
     }
-    if(subcommand.equalsIgnoreCase("remove")) {
+    if (subcommand.equalsIgnoreCase("remove")) {
       var name = event.getOption("name").getAsString();
 
-      if(!alertFeature.exists(name)) {
+      if (!alertFeature.exists(name)) {
         event.reply("Eine Erinnerung mit diesem Namen gibt es nicht.").setEphemeral(true).queue();
         return;
       }

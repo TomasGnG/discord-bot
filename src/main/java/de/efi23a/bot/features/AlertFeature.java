@@ -1,11 +1,11 @@
 package de.efi23a.bot.features;
 
+import static com.mongodb.client.model.Filters.eq;
+
 import com.mongodb.client.FindIterable;
-import com.mongodb.client.ListIndexesIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.CreateCollectionOptions;
 import de.efi23a.bot.database.MongoConfig;
 import jakarta.annotation.PostConstruct;
 import java.awt.Color;
@@ -13,7 +13,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -27,8 +26,6 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import org.bson.Document;
 import org.springframework.stereotype.Component;
-
-import static com.mongodb.client.model.Filters.eq;
 
 /**
  * Alert Feature von Tomas Keder.
@@ -63,16 +60,18 @@ public class AlertFeature {
                 .addOption(OptionType.STRING, "name", "Benenne die Erinnerung.", true)
                 .addOption(OptionType.STRING, "date", "Datum für die Erinnerung. Bsp: "
                         + new SimpleDateFormat("dd.MM.yyyy")
-                              .format(new Date(System.currentTimeMillis())),
+                        .format(new Date(System.currentTimeMillis())),
                     true)
                 .addOption(OptionType.STRING, "description", "Beschreibung für die Erinnerung.",
                     true),
             new SubcommandData("remove", "Entferne eine Erinnerung.")
                 .addOption(OptionType.STRING, "name", "Name der Erinnerung", true),
             new SubcommandData("edit", "Ändere eine Erinnerung")
-                .addOption(OptionType.STRING, "name", "Erinnerung die bearbeitet werden soll.", true)
+                .addOption(OptionType.STRING, "name", "Erinnerung die bearbeitet werden soll.",
+                    true)
                 .addOptions(
-                    new OptionData(OptionType.STRING, "property", "Eigenschaft die geändert werden soll.")
+                    new OptionData(OptionType.STRING, "property",
+                        "Eigenschaft die geändert werden soll.")
                         .addChoice("Name", "name")
                         .addChoice("Datum", "date")
                         .addChoice("Beschreibung", "description")
@@ -91,15 +90,19 @@ public class AlertFeature {
         var sdf = new SimpleDateFormat("dd.MM.yyyy");
         var alerts = getAlerts();
 
-        for(var alert : alerts) {
+        for (var alert : alerts) {
           try {
-            var duration = Duration.between(new Date(System.currentTimeMillis()).toInstant(), sdf.parse(alert.getString("date")).toInstant());
+            var duration = Duration.between(new Date(System.currentTimeMillis()).toInstant(),
+                sdf.parse(alert.getString("date")).toInstant());
 
-            if(!alert.getBoolean("announcement1day") && (duration.get(ChronoUnit.SECONDS)/60/60) < 24) {
+            if (!alert.getBoolean("announcement1day") &&
+                (duration.get(ChronoUnit.SECONDS) / 60 / 60) < 24) {
               alert.replace("announcement1day", true);
               updateAlert(alert);
               sendAlert(alert);
-            } else if(!alert.getBoolean("announcement3day") && !alert.getBoolean("announcement1day") && (duration.get(ChronoUnit.SECONDS)/60/60) < 72) {
+            } else if (!alert.getBoolean("announcement3day") &&
+                !alert.getBoolean("announcement1day") &&
+                (duration.get(ChronoUnit.SECONDS) / 60 / 60) < 72) {
               alert.replace("announcement3day", true);
               updateAlert(alert);
               sendAlert(alert);
@@ -129,22 +132,22 @@ public class AlertFeature {
     alerts.insertOne(document);
   }
 
-  private void updateAlert(Document updatedAlert){
+  private void updateAlert(Document updatedAlert) {
     var filter = eq("_id", updatedAlert.get("_id"));
 
-    if(alerts.find(filter).first() != null) {
+    if (alerts.find(filter).first() != null) {
       alerts.replaceOne(filter, updatedAlert);
     }
   }
 
-  public void editAlert(String name, String property, String value){
+  public void editAlert(String name, String property, String value) {
     var filter = eq("name", name);
 
-    if(exists(name)) {
+    if (exists(name)) {
       var doc = alerts.find(filter).first();
       doc.replace(property, value);
 
-      if(property.equalsIgnoreCase("date")) {
+      if (property.equalsIgnoreCase("date")) {
         doc.replace("announcement3day", false);
         doc.replace("announcement1day", false);
       }
@@ -154,8 +157,9 @@ public class AlertFeature {
   }
 
   public void removeAlert(String name) {
-    if(exists(name))
+    if (exists(name)) {
       alerts.deleteOne(eq("name", name));
+    }
   }
 
   public FindIterable<Document> getAlerts() {
@@ -163,7 +167,7 @@ public class AlertFeature {
   }
 
   private Document getAlertByName(String name) {
-    if(exists(name)) {
+    if (exists(name)) {
       return alerts.find(eq("name", name)).first();
     }
     return null;
