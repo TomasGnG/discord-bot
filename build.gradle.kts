@@ -1,7 +1,6 @@
 plugins {
     id("java")
     id("checkstyle")
-    id("com.github.spotbugs") version "6.0.0-beta.3"
     id("org.springframework.boot") version "3.1.4"
 }
 
