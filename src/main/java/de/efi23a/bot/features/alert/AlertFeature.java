@@ -1,4 +1,4 @@
-package de.efi23a.bot.features;
+package de.efi23a.bot.features.alert;
 
 import static com.mongodb.client.model.Filters.eq;
 
@@ -95,14 +95,14 @@ public class AlertFeature {
             var duration = Duration.between(new Date(System.currentTimeMillis()).toInstant(),
                 sdf.parse(alert.getString("date")).toInstant());
 
-            if (!alert.getBoolean("announcement1day") &&
-                (duration.get(ChronoUnit.SECONDS) / 60 / 60) < 24) {
+            if (!alert.getBoolean("announcement1day")
+                && (duration.get(ChronoUnit.SECONDS) / 60 / 60) < 24) {
               alert.replace("announcement1day", true);
               updateAlert(alert);
               sendAlert(alert);
-            } else if (!alert.getBoolean("announcement3day") &&
-                !alert.getBoolean("announcement1day") &&
-                (duration.get(ChronoUnit.SECONDS) / 60 / 60) < 72) {
+            } else if (!alert.getBoolean("announcement3day")
+                && !alert.getBoolean("announcement1day")
+                && (duration.get(ChronoUnit.SECONDS) / 60 / 60) < 72) {
               alert.replace("announcement3day", true);
               updateAlert(alert);
               sendAlert(alert);
@@ -112,13 +112,27 @@ public class AlertFeature {
           }
         }
       }
-    }, 1000L, 1000L);
+    }, 5 * 1000L, 5 * 60 * 1000L);
   }
 
+  /**
+   * Überprüft, ob eine Erinnerung bereits existiert.
+   *
+   * @param name Name der Erinnerung
+   * @return true, falls eine Erinnerung mit dem Namen existiert. false wenn nicht.
+   */
   public boolean exists(String name) {
     return alerts.find(eq("name", name)).first() != null;
   }
 
+  /**
+   * Fügt eine neue Erinnerung hinzu.
+   *
+   * @param name Name der Erinnerung.
+   * @param date Datum für die Erinnerung.
+   * @param description Beschreibung für die Erinnerung.
+   * @param createdBy Ersteller von der Erinnerung.
+   */
   public void addAlert(String name, String date, String description, String createdBy) {
     var document = new Document();
 
@@ -140,6 +154,13 @@ public class AlertFeature {
     }
   }
 
+  /**
+   * Ändert eine Erinnerung.
+   *
+   * @param name Name der Erinnerung.
+   * @param property Eigenschaft, die geändert werden soll.
+   * @param value Der neue Wert für die ausgewählte Eigenschaft.
+   */
   public void editAlert(String name, String property, String value) {
     var filter = eq("name", name);
 
@@ -156,12 +177,22 @@ public class AlertFeature {
     }
   }
 
+  /**
+   * Entfernt eine Erinnerung.
+   *
+   * @param name Name der Erinnerung.
+   */
   public void removeAlert(String name) {
     if (exists(name)) {
       alerts.deleteOne(eq("name", name));
     }
   }
 
+  /**
+   * Gibt alle hinzugefügten Erinnerungen zurück.
+   *
+   * @return alle hinzugefügten Erinnerungen.
+   */
   public FindIterable<Document> getAlerts() {
     return alerts.find();
   }
@@ -183,10 +214,17 @@ public class AlertFeature {
         .setFooter("Hinzugefügt von " + alert.getString("createdBy"))
         .build();
 
-    jda.getTextChannelById(1155210664084787300L)
-        .sendMessage("everyone..").setEmbeds(embed).queue();
+    jda.getTextChannelById(1155244343054053526L)
+        .sendMessage("||" + jda.getRoleById(1154366957974474853L).getAsMention() + "||")
+        .setEmbeds(embed).queue();
   }
 
+  /**
+   * Gibt eine Embed Message für eine Erinnerung zurück.
+   *
+   * @param name Name der Erinnerung.
+   * @return EmbedMessage für die Erinnerung.
+   */
   public MessageEmbed getAlertEmbedMessage(String name) {
     var alert = getAlertByName(name);
     return new EmbedBuilder()

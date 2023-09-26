@@ -1,4 +1,4 @@
-package de.efi23a.bot.features;
+package de.efi23a.bot.features.alert;
 
 import jakarta.annotation.PostConstruct;
 import java.text.SimpleDateFormat;
@@ -9,6 +9,9 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.springframework.stereotype.Component;
 
+/**
+ * Die Listener Klasse für das Alert Feature.
+ */
 @Component
 @RequiredArgsConstructor
 public class AlertFeatureListener extends ListenerAdapter {
@@ -57,7 +60,7 @@ public class AlertFeatureListener extends ListenerAdapter {
     if (subcommand.equalsIgnoreCase("add")) {
       var name = event.getOption("name").getAsString();
       var date = event.getOption("date").getAsString();
-      var description = event.getOption("description").getAsString();
+      final var description = event.getOption("description").getAsString();
 
       if (alertFeature.exists(name)) {
         event.reply("Eine Erinnerung mit diesem Namen wurde bereits hinzugefügt. "
