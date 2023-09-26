@@ -55,19 +55,13 @@ checkstyle {
 }
 
 tasks {
+    bootJar {
+        archiveVersion = ""
+    }
     build {
         dependsOn("check")
     }
     test {
         useJUnitPlatform()
-    }
-    bootBuildImage {
-        docker {
-            host.set(System.getenv("DOCKER_HOST"))
-            tlsVerify.set(true)
-            certPath.set("/home/mcmdev/.minikube/certs")
-            imageName.set("127.0.0.1/efi23a/discord-bot:latest")
-            publish.set(false)
-        }
     }
 }
