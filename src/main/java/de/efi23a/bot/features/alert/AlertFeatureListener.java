@@ -54,6 +54,9 @@ public class AlertFeatureListener extends ListenerAdapter {
         builder.append("-> ").append(alert.get("name")).append(System.lineSeparator());
       }
 
+      if(builder.isEmpty())
+        builder.append("Es wurden keine Erinnerungen gefunden.");
+
       event.reply(builder.toString()).setEphemeral(true).queue();
       return;
     }
