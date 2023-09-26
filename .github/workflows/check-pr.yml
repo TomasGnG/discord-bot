@@ -1,0 +1,17 @@
+name: Check PR
+on: ['pull_request']
+jobs:
+  docker-publish:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+      - name: Check
+        run: './gradlew check'
