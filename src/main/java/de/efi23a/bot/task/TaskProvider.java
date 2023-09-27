@@ -2,18 +2,21 @@ package de.efi23a.bot.task;
 
 import de.efi23a.bot.database.model.TaskModel;
 import de.efi23a.bot.database.repository.TaskRepository;
+import java.util.Date;
 import lombok.Getter;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import java.util.Date;
 
+/**
+ * All functions that belong to Task.
+ */
 @Getter
 @Component
 public class TaskProvider {
 
-  private final Log LOG = LogFactory.getLog(getClass().getName());
+  private final Log log = LogFactory.getLog(getClass().getName());
 
   private final TaskRepository taskRepository;
 
@@ -29,8 +32,14 @@ public class TaskProvider {
     return taskRepository.save(new TaskModel(title, description, date, importance));
   }
 
-  //... sets task with Id 'oldId' to Id 'newId'
-  //... deletes task Id 'oldId' from database
+
+  /**
+   * Sets TaskId from oldId to newId.
+   * deletes TaskId oldId from database
+   *
+   * @param oldId oldId of Task
+   * @param newId newId of Task
+   */
   public void setTaskId(String oldId, String newId) {
     TaskModel task = taskRepository.findTaskById(oldId);
     this.taskRepository.delete(task);
