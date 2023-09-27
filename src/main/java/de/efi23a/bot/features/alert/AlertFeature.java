@@ -257,7 +257,7 @@ public class AlertFeature {
         .setColor(Color.ORANGE)
         .setTitle("Erinnerung")
         .addField("Name", alert.getString("name"), false)
-        .addField("Datum",sdf.format(alert.getDate("date")), false)
+        .addField("Datum", sdf.format(alert.getDate("date")), false)
         .addField("Beschreibung", alert.getString("description"), false)
         .setFooter("Hinzugefügt von " + alert.getString("createdBy"))
         .build();
