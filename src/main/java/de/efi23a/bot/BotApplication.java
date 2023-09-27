@@ -1,12 +1,14 @@
 package de.efi23a.bot;
 
-import de.efi23a.bot.features.AlertFeature;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * Dient als Einstiegspunkt für die Bot-Anwendung.
  */
+
+@EnableScheduling
 @SpringBootApplication
 public class BotApplication {
 
