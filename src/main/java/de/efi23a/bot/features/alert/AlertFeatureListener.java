@@ -73,8 +73,9 @@ public class AlertFeatureListener extends ListenerAdapter {
         return;
       }
 
+      Date dateInstance;
       try {
-        var dateInstance = sdf.parse(date);
+        dateInstance = sdf.parse(date);
 
         if (sdf.parse(sdf.format(new Date(System.currentTimeMillis()))).after(dateInstance)) {
           throw new Exception();
@@ -86,7 +87,7 @@ public class AlertFeatureListener extends ListenerAdapter {
       }
 
       event.reply("Du hast eine neue Erinnerung hinzugefügt.").setEphemeral(true).queue();
-      alertFeature.addAlert(name, date, description, event.getMember().getEffectiveName());
+      alertFeature.addAlert(name, dateInstance, description, event.getMember().getEffectiveName());
       return;
     }
     if (subcommand.equalsIgnoreCase("edit")) {
@@ -106,6 +107,10 @@ public class AlertFeatureListener extends ListenerAdapter {
           if (sdf.parse(sdf.format(new Date(System.currentTimeMillis()))).after(dateInstance)) {
             throw new Exception();
           }
+
+          alertFeature.editAlert(name, property, dateInstance);
+          event.reply("Die Erinnerung '" + name + "' wurde geändert.").setEphemeral(true).queue();
+          return;
         } catch (Exception e) {
           event.reply("Das eingetragene Datum(``" + value + "``) ist ungültig!").setEphemeral(true)
               .queue();

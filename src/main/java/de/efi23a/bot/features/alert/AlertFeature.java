@@ -9,7 +9,6 @@ import com.mongodb.client.MongoDatabase;
 import de.efi23a.bot.database.MongoConfig;
 import jakarta.annotation.PostConstruct;
 import java.awt.Color;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
@@ -59,6 +58,7 @@ public class AlertFeature {
   private MongoClient client;
   private MongoDatabase db;
   private MongoCollection<Document> alerts;
+  private final SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy");
 
   @PostConstruct
   void postConstruct() {
@@ -79,8 +79,7 @@ public class AlertFeature {
             new SubcommandData("add", "Erstelle eine neue Erinnerung.")
                 .addOption(OptionType.STRING, "name", "Benenne die Erinnerung.", true)
                 .addOption(OptionType.STRING, "date", "Datum für die Erinnerung. Bsp: "
-                        + new SimpleDateFormat("dd.MM.yyyy")
-                        .format(new Date(System.currentTimeMillis())),
+                        + sdf.format(new Date(System.currentTimeMillis())),
                     true)
                 .addOption(OptionType.STRING, "description", "Beschreibung für die Erinnerung.",
                     true),
@@ -105,40 +104,34 @@ public class AlertFeature {
 
   @Scheduled(fixedDelay = 5, timeUnit = TimeUnit.MINUTES)
   private void startAlertCheckerTask() {
-    var sdf = new SimpleDateFormat("dd.MM.yyyy");
     var alerts = getAlerts();
 
     for (var alert : alerts) {
-      try {
-        var alertDate = Duration.between(Instant.now(),
-            sdf.parse(alert.getString("date")).toInstant());
-        var lastReminder = getAlertLastReminder(alert);
-        int firstReminderHours = Integer.parseInt(System.getenv(ALERT_FIRST_REMINDER));
-        int lastReminderHours = Integer.parseInt(System.getenv(ALERT_LAST_REMINDER));
+      var alertDate = Duration.between(Instant.now(), alert.getDate("date").toInstant());
+      var lastReminder = getAlertLastReminder(alert);
+      int firstReminderHours = Integer.parseInt(System.getenv(ALERT_FIRST_REMINDER));
+      int lastReminderHours = Integer.parseInt(System.getenv(ALERT_LAST_REMINDER));
 
-        if ((alertDate.get(ChronoUnit.SECONDS) / 60 / 60) < lastReminderHours
-            && lastReminder == null
-            || (Duration.between(Instant.now(), lastReminder.toInstant())
-            .getSeconds() / 60 / 60) > lastReminderHours) {
-          alert.replace("lastReminder", Instant.now());
-          updateAlert(alert);
-          sendAlert(alert);
-          return;
-        }
+      if ((alertDate.get(ChronoUnit.SECONDS) / 60 / 60) < lastReminderHours
+          && lastReminder == null
+          || (Duration.between(Instant.now(), lastReminder.toInstant())
+          .getSeconds() / 60 / 60) > lastReminderHours) {
+        alert.replace("lastReminder", Instant.now());
+        updateAlert(alert);
+        sendAlert(alert);
+        return;
+      }
 
-        if (Duration.between(Instant.now(), lastReminder.toInstant())
-            .getSeconds() / 60 / 60 > firstReminderHours) {
-          alert.replace("lastReminder", Instant.now());
-          updateAlert(alert);
-          sendAlert(alert);
-          return;
-        }
+      if (Duration.between(Instant.now(), lastReminder.toInstant())
+          .getSeconds() / 60 / 60 > firstReminderHours) {
+        alert.replace("lastReminder", Instant.now());
+        updateAlert(alert);
+        sendAlert(alert);
+        return;
+      }
 
-        if ((alertDate.getSeconds() / 60 / 60) < -36) {
-          removeAlert(alert.getString("name"));
-        }
-      } catch (ParseException e) {
-        throw new RuntimeException(e);
+      if ((alertDate.getSeconds() / 60 / 60) < -36) {
+        removeAlert(alert.getString("name"));
       }
     }
   }
@@ -161,7 +154,7 @@ public class AlertFeature {
    * @param description Beschreibung für die Erinnerung.
    * @param createdBy Ersteller von der Erinnerung.
    */
-  public void addAlert(String name, String date, String description, String createdBy) {
+  public void addAlert(String name, Date date, String description, String createdBy) {
     var document = new Document();
 
     document.put("name", name);
@@ -188,7 +181,7 @@ public class AlertFeature {
    * @param property Eigenschaft, die geändert werden soll.
    * @param value Der neue Wert für die ausgewählte Eigenschaft.
    */
-  public void editAlert(String name, String property, String value) {
+  public void editAlert(String name, String property, Object value) {
     var filter = eq("name", name);
 
     if (exists(name)) {
@@ -240,7 +233,7 @@ public class AlertFeature {
         .setColor(Color.ORANGE)
         .setTitle("Erinnerung")
         .addField("Name", alert.getString("name"), false)
-        .addField("Datum", alert.getString("date"), false)
+        .addField("Datum", sdf.format(alert.getDate("date")), false)
         .addField("Beschreibung", alert.getString("description"), false)
         .setFooter("Hinzugefügt von " + alert.getString("createdBy"))
         .build();
@@ -264,7 +257,7 @@ public class AlertFeature {
         .setColor(Color.ORANGE)
         .setTitle("Erinnerung")
         .addField("Name", alert.getString("name"), false)
-        .addField("Datum", alert.getString("date"), false)
+        .addField("Datum",sdf.format(alert.getDate("date")), false)
         .addField("Beschreibung", alert.getString("description"), false)
         .setFooter("Hinzugefügt von " + alert.getString("createdBy"))
         .build();
