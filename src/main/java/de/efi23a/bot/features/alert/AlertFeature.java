@@ -12,10 +12,10 @@ import java.awt.Color;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
@@ -25,6 +25,7 @@ import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import org.bson.Document;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
@@ -33,6 +34,29 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class AlertFeature {
+
+  /**
+   * Die Channel-ID für die Erinnerungen.
+   */
+  private static final String ALERT_CHANNEL_ID = "ALERT_CHANNEL_ID";
+  /**
+   * Die Rollen-ID, die gepingt werden soll.
+   */
+  private static final String ALERT_ROLE_ID = "ALERT_ROLE_ID";
+  /**
+   * Die Zeit (in Stunden), wann die erste Erinnerung abgeschickt werden soll.
+   * Optimal: 72 Stunden → Unter 72 Stunden wird eine Erinnerung geschickt.
+   */
+  private static final String ALERT_FIRST_REMINDER = "ALERT_FIRST_REMINDER";
+  /**
+   * Die Zeit (in Stunden), wann die letzte Erinnerung abgeschickt werden soll.
+   * Optimal: 24 Stunden → Unter 24 Stunden wird eine Erinnerung geschickt.
+   */
+  private static final String ALERT_LAST_REMINDER = "ALERT_LAST_REMINDER";
+  /**
+   * Die Zeit (in Minuten) für den AlertCheck Scheduler.
+   */
+  private static final String ALERT_SCHEDULER_DELAY = "ALERT_SCHEDULER_DELAY";
 
   private final JDA jda;
   private final MongoConfig mongoConfig;
@@ -83,36 +107,43 @@ public class AlertFeature {
     jda.updateCommands().addCommands(cmd).queue();
   }
 
+  @Scheduled(fixedDelay = 5, timeUnit = TimeUnit.MINUTES)
   private void startAlertCheckerTask() {
-    new Timer().schedule(new TimerTask() {
-      @Override
-      public void run() {
-        var sdf = new SimpleDateFormat("dd.MM.yyyy");
-        var alerts = getAlerts();
+    var sdf = new SimpleDateFormat("dd.MM.yyyy");
+    var alerts = getAlerts();
 
-        for (var alert : alerts) {
-          try {
-            var duration = Duration.between(new Date(System.currentTimeMillis()).toInstant(),
-                sdf.parse(alert.getString("date")).toInstant());
+    for (var alert : alerts) {
+      try {
+        var alertDate = Duration.between(Instant.now(),
+            sdf.parse(alert.getString("date")).toInstant());
+        var lastReminder = getAlertLastReminder(alert);
+        int firstReminderHours = Integer.parseInt(System.getenv(ALERT_FIRST_REMINDER));
+        int lastReminderHours = Integer.parseInt(System.getenv(ALERT_LAST_REMINDER));
 
-            if (!alert.getBoolean("announcement1day")
-                && (duration.get(ChronoUnit.SECONDS) / 60 / 60) < 24) {
-              alert.replace("announcement1day", true);
-              updateAlert(alert);
-              sendAlert(alert);
-            } else if (!alert.getBoolean("announcement3day")
-                && !alert.getBoolean("announcement1day")
-                && (duration.get(ChronoUnit.SECONDS) / 60 / 60) < 72) {
-              alert.replace("announcement3day", true);
-              updateAlert(alert);
-              sendAlert(alert);
-            }
-          } catch (ParseException e) {
-            throw new RuntimeException(e);
-          }
+        if ((alertDate.get(ChronoUnit.SECONDS) / 60 / 60) < lastReminderHours
+            && lastReminder == null
+            || (Duration.between(Instant.now(), lastReminder.toInstant())
+            .getSeconds() / 60 / 60) > lastReminderHours) {
+          alert.replace("lastReminder", System.currentTimeMillis() + "");
+          updateAlert(alert);
+          sendAlert(alert);
+          return;
         }
+        if (Duration.between(Instant.now(), lastReminder.toInstant())
+            .getSeconds() / 60 / 60 > firstReminderHours) {
+          alert.replace("lastReminder", System.currentTimeMillis() + "");
+          updateAlert(alert);
+          sendAlert(alert);
+          return;
+        }
+
+        if ((alertDate.getSeconds() / 60 / 60) < -36) {
+          removeAlert(alert.getString("name"));
+        }
+      } catch (ParseException e) {
+        throw new RuntimeException(e);
       }
-    }, 5 * 1000L, 5 * 60 * 1000L);
+    }
   }
 
   /**
@@ -140,8 +171,7 @@ public class AlertFeature {
     document.put("date", date);
     document.put("description", description);
     document.put("createdBy", createdBy);
-    document.put("announcement3day", false);
-    document.put("announcement1day", false);
+    document.put("lastReminder", "");
 
     alerts.insertOne(document);
   }
@@ -169,8 +199,7 @@ public class AlertFeature {
       doc.replace(property, value);
 
       if (property.equalsIgnoreCase("date")) {
-        doc.replace("announcement3day", false);
-        doc.replace("announcement1day", false);
+        doc.replace("lastReminder", "");
       }
 
       alerts.replaceOne(filter, doc);
@@ -204,6 +233,11 @@ public class AlertFeature {
     return null;
   }
 
+  private Date getAlertLastReminder(Document document) {
+    var lastReminder = document.getString("lastReminder");
+    return !lastReminder.isBlank() ? new Date(Long.parseLong(lastReminder)) : null;
+  }
+
   private void sendAlert(Document alert) {
     var embed = new EmbedBuilder()
         .setColor(Color.ORANGE)
@@ -214,8 +248,10 @@ public class AlertFeature {
         .setFooter("Hinzugefügt von " + alert.getString("createdBy"))
         .build();
 
-    jda.getTextChannelById(1155244343054053526L)
-        .sendMessage("||" + jda.getRoleById(1154366957974474853L).getAsMention() + "||")
+    jda.getTextChannelById(Long.parseLong(System.getenv(ALERT_CHANNEL_ID)))
+        .sendMessage("||"
+            + jda.getRoleById(Long.parseLong(System.getenv(ALERT_ROLE_ID))).getAsMention()
+            + "||")
         .setEmbeds(embed).queue();
   }
 
