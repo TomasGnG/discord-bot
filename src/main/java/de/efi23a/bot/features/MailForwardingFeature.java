@@ -97,11 +97,14 @@ public class MailForwardingFeature {
   private void handleMailForwarding(@NotNull Session session, @NotNull String url,
                                     @NotNull TextChannel textChannel)
       throws MessagingException, IOException {
-    for (Message message : fetchMail(session, url)) {
-      MessageEmbed messageEmbed = buildEmbed(message);
-      textChannel.sendMessageEmbeds(messageEmbed).queue();
 
-      message.setFlag(Flags.Flag.SEEN, true);
+    try (Store store = openStore(session, url); Folder folder = openFolder(store)) {
+      for (Message message : getNewMails(folder)) {
+        MessageEmbed messageEmbed = buildEmbed(message);
+        textChannel.sendMessageEmbeds(messageEmbed).queue();
+
+        message.setFlag(Flags.Flag.SEEN, true);
+      }
     }
   }
 
@@ -114,24 +117,6 @@ public class MailForwardingFeature {
   public Session createSession() {
     return Session.getInstance(getMailProperties());
   }
-
-  /**
-   * Sammelt alle neuen Mails aus dem IMAP-Server.
-   *
-   * @param session Die Sitzung, die für die Verbindung zum IMAP-Server verwendet wird.
-   * @param url     Die URL des IMAP-Servers.
-   * @return Die Liste der neuen Mails.
-   * @throws MessagingException Wird geworfen, wenn eine Mail nicht gelesen werden kann.
-   */
-  @NotNull
-  public List<Message> fetchMail(@NotNull Session session, @NotNull String url)
-      throws MessagingException {
-
-    try (Store store = openStore(session, url); Folder folder = openFolder(store)) {
-      return getNewMails(folder);
-    }
-  }
-
 
   /**
    * Stellt eine Verbindung zum IMAP-Server her.
