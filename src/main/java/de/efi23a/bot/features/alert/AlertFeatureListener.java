@@ -18,6 +18,7 @@ public class AlertFeatureListener extends ListenerAdapter {
 
   private final JDA jda;
   private final AlertFeature alertFeature;
+  private final SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy");
 
   @PostConstruct
   void postConstruct() {
@@ -73,11 +74,9 @@ public class AlertFeatureListener extends ListenerAdapter {
       }
 
       try {
-        var sdf = new SimpleDateFormat("dd.MM.yyyy");
+        var dateInstance = sdf.parse(date);
 
-        var dateInstanz = sdf.parse(date);
-
-        if (sdf.parse(sdf.format(new Date(System.currentTimeMillis()))).after(dateInstanz)) {
+        if (sdf.parse(sdf.format(new Date(System.currentTimeMillis()))).after(dateInstance)) {
           throw new Exception();
         }
       } catch (Exception e) {
@@ -102,11 +101,9 @@ public class AlertFeatureListener extends ListenerAdapter {
 
       if (property.equalsIgnoreCase("date")) {
         try {
-          var sdf = new SimpleDateFormat("dd.MM.yyyy");
+          var dateInstance = sdf.parse(value);
 
-          var dateInstanz = sdf.parse(value);
-
-          if (sdf.parse(sdf.format(new Date(System.currentTimeMillis()))).after(dateInstanz)) {
+          if (sdf.parse(sdf.format(new Date(System.currentTimeMillis()))).after(dateInstance)) {
             throw new Exception();
           }
         } catch (Exception e) {

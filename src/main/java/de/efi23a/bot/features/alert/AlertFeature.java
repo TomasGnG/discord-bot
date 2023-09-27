@@ -53,10 +53,6 @@ public class AlertFeature {
    * Optimal: 24 Stunden → Unter 24 Stunden wird eine Erinnerung geschickt.
    */
   private static final String ALERT_LAST_REMINDER = "ALERT_LAST_REMINDER";
-  /**
-   * Die Zeit (in Minuten) für den AlertCheck Scheduler.
-   */
-  private static final String ALERT_SCHEDULER_DELAY = "ALERT_SCHEDULER_DELAY";
 
   private final JDA jda;
   private final MongoConfig mongoConfig;
@@ -67,7 +63,7 @@ public class AlertFeature {
   @PostConstruct
   void postConstruct() {
     client = mongoConfig.mongoClient();
-    db = client.getDatabase("TestCluster");
+    db = client.getDatabase(System.getenv("DATABASE"));
     alerts = db.getCollection("alerts");
 
     registerAlertCommand();
@@ -124,14 +120,15 @@ public class AlertFeature {
             && lastReminder == null
             || (Duration.between(Instant.now(), lastReminder.toInstant())
             .getSeconds() / 60 / 60) > lastReminderHours) {
-          alert.replace("lastReminder", System.currentTimeMillis() + "");
+          alert.replace("lastReminder", Instant.now());
           updateAlert(alert);
           sendAlert(alert);
           return;
         }
+
         if (Duration.between(Instant.now(), lastReminder.toInstant())
             .getSeconds() / 60 / 60 > firstReminderHours) {
-          alert.replace("lastReminder", System.currentTimeMillis() + "");
+          alert.replace("lastReminder", Instant.now());
           updateAlert(alert);
           sendAlert(alert);
           return;
@@ -171,7 +168,7 @@ public class AlertFeature {
     document.put("date", date);
     document.put("description", description);
     document.put("createdBy", createdBy);
-    document.put("lastReminder", "");
+    document.put("lastReminder", null);
 
     alerts.insertOne(document);
   }
@@ -199,7 +196,7 @@ public class AlertFeature {
       doc.replace(property, value);
 
       if (property.equalsIgnoreCase("date")) {
-        doc.replace("lastReminder", "");
+        doc.replace("lastReminder", null);
       }
 
       alerts.replaceOne(filter, doc);
@@ -234,8 +231,8 @@ public class AlertFeature {
   }
 
   private Date getAlertLastReminder(Document document) {
-    var lastReminder = document.getString("lastReminder");
-    return !lastReminder.isBlank() ? new Date(Long.parseLong(lastReminder)) : null;
+    Instant lastReminder = (Instant) document.get("lastReminder");
+    return lastReminder != null ? Date.from(lastReminder) : null;
   }
 
   private void sendAlert(Document alert) {
