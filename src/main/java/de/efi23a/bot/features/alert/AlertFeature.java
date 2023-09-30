@@ -27,30 +27,13 @@ import org.bson.Document;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-/**
- * Alert Feature von Tomas Keder.
- */
 @Component
 @RequiredArgsConstructor
 public class AlertFeature {
 
-  /**
-   * Die Channel-ID für die Erinnerungen.
-   */
   private static final String ALERT_CHANNEL_ID = "ALERT_CHANNEL_ID";
-  /**
-   * Die Rollen-ID, die gepingt werden soll.
-   */
   private static final String ALERT_ROLE_ID = "ALERT_ROLE_ID";
-  /**
-   * Die Zeit (in Stunden), wann die erste Erinnerung abgeschickt werden soll.
-   * Optimal: 72 Stunden → Unter 72 Stunden wird eine Erinnerung geschickt.
-   */
   private static final String ALERT_FIRST_REMINDER = "ALERT_FIRST_REMINDER";
-  /**
-   * Die Zeit (in Stunden), wann die letzte Erinnerung abgeschickt werden soll.
-   * Optimal: 24 Stunden → Unter 24 Stunden wird eine Erinnerung geschickt.
-   */
   private static final String ALERT_LAST_REMINDER = "ALERT_LAST_REMINDER";
 
   private final JDA jda;
@@ -136,24 +119,10 @@ public class AlertFeature {
     }
   }
 
-  /**
-   * Überprüft, ob eine Erinnerung bereits existiert.
-   *
-   * @param name Name der Erinnerung
-   * @return true, falls eine Erinnerung mit dem Namen existiert. false wenn nicht.
-   */
   public boolean exists(String name) {
     return alerts.find(eq("name", name)).first() != null;
   }
 
-  /**
-   * Fügt eine neue Erinnerung hinzu.
-   *
-   * @param name Name der Erinnerung.
-   * @param date Datum für die Erinnerung.
-   * @param description Beschreibung für die Erinnerung.
-   * @param createdBy Ersteller von der Erinnerung.
-   */
   public void addAlert(String name, Date date, String description, String createdBy) {
     var document = new Document();
 
@@ -174,13 +143,6 @@ public class AlertFeature {
     }
   }
 
-  /**
-   * Ändert eine Erinnerung.
-   *
-   * @param name Name der Erinnerung.
-   * @param property Eigenschaft, die geändert werden soll.
-   * @param value Der neue Wert für die ausgewählte Eigenschaft.
-   */
   public void editAlert(String name, String property, Object value) {
     var filter = eq("name", name);
 
@@ -196,22 +158,12 @@ public class AlertFeature {
     }
   }
 
-  /**
-   * Entfernt eine Erinnerung.
-   *
-   * @param name Name der Erinnerung.
-   */
   public void removeAlert(String name) {
     if (exists(name)) {
       alerts.deleteOne(eq("name", name));
     }
   }
 
-  /**
-   * Gibt alle hinzugefügten Erinnerungen zurück.
-   *
-   * @return alle hinzugefügten Erinnerungen.
-   */
   public FindIterable<Document> getAlerts() {
     return alerts.find();
   }
@@ -245,12 +197,6 @@ public class AlertFeature {
         .setEmbeds(embed).queue();
   }
 
-  /**
-   * Gibt eine Embed Message für eine Erinnerung zurück.
-   *
-   * @param name Name der Erinnerung.
-   * @return EmbedMessage für die Erinnerung.
-   */
   public MessageEmbed getAlertEmbedMessage(String name) {
     var alert = getAlertByName(name);
     return new EmbedBuilder()
