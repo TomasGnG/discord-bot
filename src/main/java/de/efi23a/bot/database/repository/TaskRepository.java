@@ -5,9 +5,6 @@ import java.util.List;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 
-/**
- * Database Repository for Table 'Task'.
- */
 public interface TaskRepository extends MongoRepository<TaskModel, String> {
 
   @Query("{title:'?0'}")

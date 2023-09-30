@@ -10,9 +10,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
-/**
- * Configuration Class for MongoDB.
- */
 @Configuration
 @EnableMongoRepositories(basePackages = "de.efi23a.bot.database.repository")
 public class MongoConfig extends AbstractMongoClientConfiguration {

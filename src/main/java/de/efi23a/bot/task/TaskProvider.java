@@ -9,9 +9,6 @@ import org.apache.juli.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-/**
- * All functions that belong to Task.
- */
 @Getter
 @Component
 public class TaskProvider {
@@ -32,14 +29,6 @@ public class TaskProvider {
     return taskRepository.save(new TaskModel(title, description, date, importance));
   }
 
-
-  /**
-   * Sets TaskId from oldId to newId.
-   * deletes TaskId oldId from database
-   *
-   * @param oldId oldId of Task
-   * @param newId newId of Task
-   */
   public void setTaskId(String oldId, String newId) {
     TaskModel task = taskRepository.findTaskById(oldId);
     this.taskRepository.delete(task);

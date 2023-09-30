@@ -5,9 +5,6 @@ import net.dv8tion.jda.api.JDABuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/**
- * Definiert Singleton-Beans für die Bot-Anwendung.
- */
 @Configuration
 public class BotConfiguration {
 
