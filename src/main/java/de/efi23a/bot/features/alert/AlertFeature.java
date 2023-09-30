@@ -224,8 +224,8 @@ public class AlertFeature {
   }
 
   private Date getAlertLastReminder(Document document) {
-    Instant lastReminder = (Instant) document.get("lastReminder");
-    return lastReminder != null ? Date.from(lastReminder) : null;
+    Date date = document.getDate("lastReminder");
+    return date != null ? date : null;
   }
 
   private void sendAlert(Document alert) {
