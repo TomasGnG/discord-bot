@@ -22,8 +22,10 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -54,7 +56,7 @@ public class AlertFeature {
   }
 
   private void registerAlertCommand() {
-    var cmd = Commands.slash("alert", "Verwalte die Erinnerungen.")
+    SlashCommandData cmd = Commands.slash("alert", "Verwalte die Erinnerungen.")
         .addSubcommands(
             new SubcommandData("info", "Zeigt alle Details zu einer Erinnerung.")
                 .addOption(OptionType.STRING, "name", "Name der Erinnerung", true),
@@ -87,35 +89,43 @@ public class AlertFeature {
 
   @Scheduled(fixedDelay = 5, timeUnit = TimeUnit.MINUTES)
   private void startAlertCheckerTask() {
-    var alerts = getAlerts();
+    FindIterable<Document> alerts = getAlerts();
 
     for (var alert : alerts) {
-      var alertDate = Duration.between(Instant.now(), alert.getDate("date").toInstant());
-      var lastReminder = getAlertLastReminder(alert);
+      Duration alertDate = Duration.between(Instant.now(), alert.getDate("date").toInstant());
+      Date lastReminder = getAlertLastReminder(alert);
       int firstReminderHours = Integer.parseInt(System.getenv(ALERT_FIRST_REMINDER));
       int lastReminderHours = Integer.parseInt(System.getenv(ALERT_LAST_REMINDER));
 
-      if ((alertDate.get(ChronoUnit.SECONDS) / 60 / 60) < lastReminderHours
-          && lastReminder == null
-          || (Duration.between(Instant.now(), lastReminder.toInstant())
-          .getSeconds() / 60 / 60) > lastReminderHours) {
-        alert.replace("lastReminder", Instant.now());
-        updateAlert(alert);
-        sendAlert(alert);
-        return;
-      }
+      processAlert(alert, alertDate, lastReminder, firstReminderHours, lastReminderHours);
+    }
+  }
 
-      if (Duration.between(Instant.now(), lastReminder.toInstant())
-          .getSeconds() / 60 / 60 > firstReminderHours) {
-        alert.replace("lastReminder", Instant.now());
-        updateAlert(alert);
-        sendAlert(alert);
-        return;
-      }
+  private void processAlert(Document alert,
+                            Duration alertDate,
+                            Date lastReminder,
+                            int firstReminderHours,
+                            int lastReminderHours) {
+    if ((alertDate.get(ChronoUnit.SECONDS) / 60 / 60) < lastReminderHours
+        && lastReminder == null
+        || (Duration.between(Instant.now(), lastReminder.toInstant())
+        .getSeconds() / 60 / 60) > lastReminderHours) {
+      alert.replace("lastReminder", Instant.now());
+      updateAlert(alert);
+      sendAlert(alert);
+      return;
+    }
 
-      if ((alertDate.getSeconds() / 60 / 60) < -36) {
-        removeAlert(alert.getString("name"));
-      }
+    if (Duration.between(Instant.now(), lastReminder.toInstant())
+        .getSeconds() / 60 / 60 > firstReminderHours) {
+      alert.replace("lastReminder", Instant.now());
+      updateAlert(alert);
+      sendAlert(alert);
+      return;
+    }
+
+    if ((alertDate.getSeconds() / 60 / 60) < -36) {
+      removeAlert(alert.getString("name"));
     }
   }
 
@@ -124,7 +134,7 @@ public class AlertFeature {
   }
 
   public void addAlert(String name, Date date, String description, String createdBy) {
-    var document = new Document();
+    Document document = new Document();
 
     document.put("name", name);
     document.put("date", date);
@@ -136,7 +146,7 @@ public class AlertFeature {
   }
 
   private void updateAlert(Document updatedAlert) {
-    var filter = eq("_id", updatedAlert.get("_id"));
+    Bson filter = eq("_id", updatedAlert.get("_id"));
 
     if (alerts.find(filter).first() != null) {
       alerts.replaceOne(filter, updatedAlert);
@@ -144,10 +154,10 @@ public class AlertFeature {
   }
 
   public void editAlert(String name, String property, Object value) {
-    var filter = eq("name", name);
+    Bson filter = eq("name", name);
 
     if (exists(name)) {
-      var doc = alerts.find(filter).first();
+      Document doc = alerts.find(filter).first();
       doc.replace(property, value);
 
       if (property.equalsIgnoreCase("date")) {
@@ -181,7 +191,7 @@ public class AlertFeature {
   }
 
   private void sendAlert(Document alert) {
-    var embed = new EmbedBuilder()
+    MessageEmbed embed = new EmbedBuilder()
         .setColor(Color.ORANGE)
         .setTitle("Erinnerung")
         .addField("Name", alert.getString("name"), false)
@@ -198,7 +208,7 @@ public class AlertFeature {
   }
 
   public MessageEmbed getAlertEmbedMessage(String name) {
-    var alert = getAlertByName(name);
+    Document alert = getAlertByName(name);
     return new EmbedBuilder()
         .setColor(Color.ORANGE)
         .setTitle("Erinnerung")
